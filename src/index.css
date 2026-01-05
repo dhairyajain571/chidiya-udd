@@ -235,37 +235,40 @@ body {
 }
 
 /* SPACE OBJECTS */
+/* SPACE DOODLES */
 .planet {
   position: absolute;
-  /* border-radius: 50%; remove border radius for png */
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+  font-size: 5rem;
+  /* Large emoji size */
   animation: float-planet linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .planet.p1 {
-  width: 150px;
-  height: 150px;
-  background-image: url('/assets/mars.png');
-  /* Real image */
+  /* Mars / Red Planet */
   top: 20%;
   left: -150px;
   animation-duration: 40s;
 }
 
+.planet.p1::after {
+  content: "🪐";
+  /* Ringed Planet */
+}
+
 .planet.p2 {
-  width: 120px;
-  height: 120px;
-  background: radial-gradient(circle at 30% 30%, #4facfe, #00f2fe);
-  /* Keep one CSS for variety, or could gen another */
-  border-radius: 50%;
-  box-shadow: inset -20px -20px 40px rgba(0, 0, 0, 0.5);
-  /* Improve CSS planet look */
+  /* Earth / Moon */
   top: 60%;
   left: -150px;
   animation-duration: 60s;
   animation-delay: 15s;
+}
+
+.planet.p2::after {
+  content: "🌍";
+  /* Earth */
 }
 
 @keyframes float-planet {
