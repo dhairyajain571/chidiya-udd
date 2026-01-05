@@ -407,7 +407,6 @@ function MainGame() {
         <div className="bg-anim-container">
           <div className="cloud c1">☁️</div>
           <div className="cloud c2" style={{ top: '15%' }}>☁️</div>
-          <div className="skyline"></div>
         </div>
       );
     }
