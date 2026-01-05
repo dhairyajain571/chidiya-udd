@@ -217,7 +217,19 @@ function MainGame() {
       setRoundCount(0); // Reset visual stage
     });
 
+    socket.on('game_reset', () => {
+      setView('LOBBY');
+      setRoundCount(0);
+      setScores({});
+      setLives({});
+    });
+
+    socket.on('settings_updated', (newSettings) => {
+      setGameSettings(newSettings);
+    });
+
     socket.on('countdown_tick', (val) => {
+      console.log("⏰ TICK:", val);
       setCountdown(val);
       if (val === 'GO!') {
         setTimeout(() => setCountdown(null), 1000);
@@ -252,8 +264,8 @@ function MainGame() {
         const myNewLives = newLives[socket.id] ?? 3;
 
         if (myNewLives < oldLives) {
-          setFlashError(true);
-          setTimeout(() => setFlashError(false), 500);
+          setCardFeedback('error');
+          setTimeout(() => setCardFeedback(null), 500);
         }
       }
 
@@ -274,6 +286,12 @@ function MainGame() {
     });
 
     socket.on('error', (msg) => setError(msg));
+
+    socket.on('room_expired', () => {
+      setError('Room expired (Server restarted?)');
+      setView('JOIN');
+      setRoomCode('');
+    });
 
     return () => {
       socket.off('connect');
@@ -335,7 +353,7 @@ function MainGame() {
   // State refs to track changes for audio feedback
   const scoreRef = useRef({});
   const livesRef = useRef({});
-  const [flashError, setFlashError] = useState(false);
+  const [cardFeedback, setCardFeedback] = useState(null); // 'success' | 'error'
 
   // --- Actions ---
   const createRoom = () => { // Renamed from handleCreate
@@ -363,12 +381,13 @@ function MainGame() {
       const isFlyItem = currentItem.type === 'fly';
       const isCorrect = (isFlyItem && actionType === 'FLY') || (!isFlyItem && actionType === 'NOT_FLY');
 
+      setCardFeedback(isCorrect ? 'success' : 'error');
+      setTimeout(() => setCardFeedback(null), 500);
+
       if (isCorrect) {
         playSound('success');
       } else {
         playSound('error');
-        setFlashError(true);
-        setTimeout(() => setFlashError(false), 500);
       }
     }
   };
@@ -473,12 +492,9 @@ function MainGame() {
   };
 
   return (
-    <div className={`app-container ${currentStage} ${gameSettings.gameMode === 'RAGE' ? 'rage-mode' : ''}`} style={{ '--rage-intensity': rageIntensity }} onMouseDown={handleGameAction} onTouchStart={handleGameAction}>
+    <div className={`app-container ${currentStage} ${gameSettings.gameMode === 'RAGE' ? 'rage-mode' : ''}`} style={{ '--rage-intensity': rageIntensity }}>
 
       {renderBackgroundElements()}
-
-      {/* RED FLASH OVERLAY */}
-      {flashError && <div className="flash-error"></div>}
 
       {/* COUNTDOWN OVERLAY */}
       {countdown && (
@@ -577,6 +593,57 @@ function MainGame() {
               </div>
             ))}
           </div>
+
+          {/* LOBBY SETTINGS (HOST ONLY) */}
+          {myPlayer?.isHost && (
+            <div className="btn-group" style={{ flexDirection: 'column', gap: 5, marginTop: 20 }}>
+              <div className="settings-group">
+                <label>Difficulty:</label>
+                <div className="btn-group">
+                  {['EASY', 'MEDIUM', 'HARD'].map(d => (
+                    <button
+                      key={d}
+                      className={`settings-btn ${gameSettings.difficulty === d ? 'active' : ''}`}
+                      onClick={() => {
+                        const newSettings = { ...gameSettings, difficulty: d };
+                        setGameSettings(newSettings);
+                        socket.emit('update_settings', { roomId: roomCode, settings: newSettings });
+                      }}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-group">
+                <label>Game Mode:</label>
+                <div className="btn-group">
+                  <button
+                    className={`settings-btn ${gameSettings.gameMode === 'FUN' ? 'active' : ''}`}
+                    onClick={() => {
+                      const newSettings = { ...gameSettings, gameMode: 'FUN' };
+                      setGameSettings(newSettings);
+                      socket.emit('update_settings', { roomId: roomCode, settings: newSettings });
+                    }}
+                  >
+                    😎 FUN
+                  </button>
+                  <button
+                    className={`settings-btn rage ${gameSettings.gameMode === 'RAGE' ? 'active' : ''}`}
+                    onClick={() => {
+                      const newSettings = { ...gameSettings, gameMode: 'RAGE' };
+                      setGameSettings(newSettings);
+                      socket.emit('update_settings', { roomId: roomCode, settings: newSettings });
+                    }}
+                  >
+                    🔥 RAGE
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {myPlayer?.isHost ? (
             <button className="primary-btn" onClick={handleStart} style={{ marginTop: 20 }}>START GAME</button>
           ) : (
@@ -601,7 +668,7 @@ function MainGame() {
           <style>{`@keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }`}</style>
 
           {currentItem && (
-            <div className="card">
+            <div className={`card ${cardFeedback}`}>
               <div className="card-icon">
                 {gameSettings.visualHints ? (EMOJI_MAP[currentItem.name] || '📦') : '❓'}
               </div>
@@ -654,7 +721,11 @@ function MainGame() {
           ) : (
             <h2>You Scored: {scores[socket.id]}</h2>
           )}
-          <button className="primary-btn" onClick={() => window.location.reload()}>Play Again</button>
+          {myPlayer?.isHost ? (
+            <button className="primary-btn" onClick={() => socket.emit('restart_game', roomCode)}>Play Again</button>
+          ) : (
+            <p className="text-mute">Waiting for host to play again...</p>
+          )}
         </div>
       )}
 

@@ -264,15 +264,27 @@ io.on("connection", (socket) => {
 
       // Start Countdown
       let count = 3;
+      io.to(roomId).emit("countdown_tick", count);
+      count--;
+
       const countdownInterval = setInterval(() => {
+        // Safety check: Room might be deleted if user disconnects
+        if (!rooms[roomId]) {
+          clearInterval(countdownInterval);
+          return;
+        }
+
         if (count > 0) {
           io.to(roomId).emit("countdown_tick", count);
           count--;
         } else {
           clearInterval(countdownInterval);
           io.to(roomId).emit("countdown_tick", "GO!");
-          rooms[roomId].gameState = "PLAYING";
-          setTimeout(() => startRound(roomId), 1000); // Start game 1s after GO
+
+          if (rooms[roomId]) {
+            rooms[roomId].gameState = "PLAYING";
+            setTimeout(() => startRound(roomId), 1000);
+          }
         }
       }, 1000);
     }
@@ -299,6 +311,34 @@ io.on("connection", (socket) => {
         }
         break;
       }
+    }
+  });
+  socket.on("restart_game", (roomId) => {
+    const room = rooms[roomId];
+    if (!room) {
+      socket.emit("room_expired");
+      return;
+    }
+
+    if (socket.id === room.players[0].id) { // Only Host
+      room.gameState = "LOBBY";
+      // Reset Scores & Lives
+      Object.keys(room.scores).forEach(pid => room.scores[pid] = 0);
+      Object.keys(room.lives).forEach(pid => room.lives[pid] = 3);
+      room.roundCount = 0;
+      room.actions = {};
+      room.history = [];
+
+      io.to(roomId).emit("game_reset");
+      io.to(roomId).emit("update_players", room.players);
+    }
+  });
+
+  socket.on("update_settings", ({ roomId, settings }) => {
+    const room = rooms[roomId];
+    if (room && socket.id === room.players[0].id) { // Only Host
+      room.settings = settings;
+      io.to(roomId).emit("settings_updated", settings);
     }
   });
 });
@@ -403,18 +443,18 @@ function resolveRound(roomId) {
   if (survivors.length === 0) {
     // Everyone died same time?
     io.to(roomId).emit("game_over", { winner: null });
-    delete rooms[roomId];
+    room.gameState = "GAMEOVER";
     return;
   } else if (survivors.length === 1 && room.players.length > 1) {
     // Winner declared (if multiplayer)
     io.to(roomId).emit("game_over", { winner: survivors[0] });
-    delete rooms[roomId];
+    room.gameState = "GAMEOVER";
     return;
   }
   // Single player continues until 0 lives
   else if (room.players.length === 1 && survivors.length === 0) {
     io.to(roomId).emit("game_over", { winner: null });
-    delete rooms[roomId];
+    room.gameState = "GAMEOVER";
     return;
   }
 

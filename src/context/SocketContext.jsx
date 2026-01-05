@@ -9,7 +9,6 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    // Detect environment (local or network)
     // Auto-detect URL: Prod (Same Origin) vs Dev (Port 3001)
     const url = import.meta.env.PROD
       ? window.location.origin
