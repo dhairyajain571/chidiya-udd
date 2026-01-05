@@ -18,7 +18,481 @@ body,
 body {
   font-family: "Fredoka", sans-serif;
   background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  /* Default/Fallback */
   color: white;
+  transition: background 2s ease;
+  /* Slow transition for stage changes */
+}
+
+/* VISUAL STAGES */
+.app-container.stage-ground {
+  background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+  /* Sunrise/Morning */
+}
+
+.app-container.stage-ground .text-mute {
+  color: #5d4037;
+}
+
+/* Brownish text */
+.app-container.stage-ground h1,
+.app-container.stage-ground h2 {
+  text-shadow: none;
+  color: #d35400;
+}
+
+.app-container.stage-sky {
+  background: linear-gradient(180deg, #2980b9 0%, #6dd5fa 100%);
+  /* Deep Sky */
+}
+
+.app-container.stage-space {
+  background: #000000;
+  /* Pitch Black */
+}
+
+.app-container.stage-mars {
+  background: #000000;
+  /* Pitch Black */
+}
+
+.app-container.stage-galaxy {
+  background: #000000;
+  /* Pitch Black */
+}
+
+.app-container.stage-void {
+  background: #000000;
+  /* Pitch Black */
+}
+
+/* FUN MODE: CITY THEME */
+.app-container.stage-city {
+  background: linear-gradient(180deg, #87CEEB 0%, #bfe9ff 100%);
+  /* Bright Day */
+}
+
+.app-container.stage-city .text-mute {
+  color: #555;
+}
+
+.app-container.stage-city h1,
+.app-container.stage-city h2 {
+  color: #2c3e50;
+  text-shadow: none;
+}
+
+/* RAGE MODE OVERRIDES */
+/* Only show the red pulse overlay in the VOID stage (Round 25+) OR if it's explicitly strictly Rage Mode endgame context,
+   but user asked to remove it until after galaxy. So we attach it to stage-void. */
+.rage-mode.stage-void::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: radial-gradient(circle, transparent 20%, rgba(255, 0, 0, 0.6) 100%);
+  z-index: 1;
+  animation: rage-overlay-pulse 0.5s infinite alternate;
+}
+
+@keyframes rage-overlay-pulse {
+  from {
+    opacity: 0.3;
+  }
+
+  to {
+    opacity: 0.8;
+  }
+}
+
+/* ANIMATED BACKGROUND OBJECTS */
+.bg-anim-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cloud {
+  position: absolute;
+  font-size: 3rem;
+  opacity: 0.6;
+  animation: float linear infinite;
+}
+
+.cloud.c1 {
+  top: 10%;
+  left: -10%;
+  animation-duration: 20s;
+}
+
+.cloud.c2 {
+  top: 20%;
+  left: -10%;
+  animation-duration: 25s;
+  animation-delay: 5s;
+}
+
+.cloud.c3 {
+  top: 5%;
+  left: -10%;
+  animation-duration: 30s;
+  animation-delay: 10s;
+}
+
+@keyframes float {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(120vw);
+  }
+}
+
+.star {
+  position: absolute;
+  color: white;
+  animation: twinkle ease-in-out infinite alternate;
+}
+
+.star.s1 {
+  top: 10%;
+  left: 20%;
+  font-size: 1rem;
+  animation-duration: 2s;
+}
+
+.star.s2 {
+  top: 30%;
+  left: 80%;
+  font-size: 2px;
+  animation-duration: 3s;
+  background: white;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+}
+
+.star.s3 {
+  top: 60%;
+  left: 40%;
+  font-size: 1.5rem;
+  animation-duration: 1.5s;
+}
+
+.star.s4 {
+  top: 80%;
+  left: 10%;
+  font-size: 3px;
+  animation-duration: 4s;
+  background: white;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+}
+
+.star.s5 {
+  top: 15%;
+  left: 90%;
+  font-size: 1.2rem;
+  animation-duration: 2.5s;
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* CITY ELEMENTS */
+.skyline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 200px;
+  background: repeating-linear-gradient(90deg,
+      #2c3e50 0px,
+      #2c3e50 40px,
+      transparent 40px,
+      transparent 50px);
+  opacity: 0.8;
+  z-index: 0;
+}
+
+.skyline::after {
+  content: "";
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 100%;
+  height: 100px;
+  background: repeating-linear-gradient(90deg,
+      #34495e 0px,
+      #34495e 30px,
+      transparent 30px,
+      transparent 60px);
+  z-index: -1;
+}
+
+/* SPACE OBJECTS */
+.planet {
+  position: absolute;
+  /* border-radius: 50%; remove border radius for png */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  animation: float-planet linear infinite;
+}
+
+.planet.p1 {
+  width: 150px;
+  height: 150px;
+  background-image: url('/assets/mars.png');
+  /* Real image */
+  top: 20%;
+  left: -150px;
+  animation-duration: 40s;
+}
+
+.planet.p2 {
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle at 30% 30%, #4facfe, #00f2fe);
+  /* Keep one CSS for variety, or could gen another */
+  border-radius: 50%;
+  box-shadow: inset -20px -20px 40px rgba(0, 0, 0, 0.5);
+  /* Improve CSS planet look */
+  top: 60%;
+  left: -150px;
+  animation-duration: 60s;
+  animation-delay: 15s;
+}
+
+@keyframes float-planet {
+  from {
+    transform: translateX(-200px) rotate(0deg);
+  }
+
+  to {
+    transform: translateX(120vw) rotate(360deg);
+  }
+}
+
+/* BLACK HOLE CONTAINER - CSS VERSION */
+.black-hole {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  z-index: 10;
+  animation: expand-hole-css 20s forwards;
+}
+
+/* THE RING (Accretion Disk) - ON TOP */
+.black-hole::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotateX(70deg);
+  width: 350%;
+  height: 350%;
+  border-radius: 50%;
+  z-index: 5;
+  /* In front of sphere */
+
+  /* Unified Neon Purple Colors */
+  border: 2px solid rgba(213, 0, 249, 0.3);
+  background: radial-gradient(circle, transparent 55%, rgba(213, 0, 249, 0.2) 65%, rgba(101, 31, 255, 0.6) 80%);
+  box-shadow: 0 0 30px 10px rgba(213, 0, 249, 0.4);
+
+  animation: spin-disk 8s linear infinite;
+  pointer-events: none;
+}
+
+/* THE CORE (Black Sphere) - BEHIND */
+.black-hole::after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+
+  background: black;
+  /* Matching Glow */
+  box-shadow: 0 0 50px 20px rgba(101, 31, 255, 0.6);
+  z-index: 1;
+}
+
+@keyframes spin-disk {
+  from {
+    transform: translate(-50%, -50%) rotateX(70deg) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotateX(70deg) rotate(360deg);
+  }
+}
+
+/* SHOOTING STARS */
+.shooting-star {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1), 0 0 0 8px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 1);
+  animation: shoot 3s linear infinite;
+  opacity: 0;
+}
+
+.shooting-star::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 300px;
+  height: 1px;
+  background: linear-gradient(90deg, #fff, transparent);
+}
+
+.shooting-star.s1 {
+  top: 0;
+  left: 0;
+  animation-delay: 0s;
+}
+
+.shooting-star.s2 {
+  top: 0;
+  left: 20%;
+  animation-delay: 2s;
+}
+
+.shooting-star.s3 {
+  top: 0;
+  left: 40%;
+  animation-delay: 4s;
+}
+
+.shooting-star.s4 {
+  top: 0;
+  left: 60%;
+  animation-delay: 6s;
+}
+
+.shooting-star.s5 {
+  top: 0;
+  left: 80%;
+  animation-delay: 8s;
+}
+
+.shooting-star.s6 {
+  top: 0;
+  left: 100%;
+  animation-delay: 1s;
+}
+
+.shooting-star.s7 {
+  top: 50%;
+  left: 100%;
+  animation-delay: 3s;
+}
+
+@keyframes shoot {
+  0% {
+    transform: rotate(315deg) translateX(0);
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(315deg) translateX(-1000px);
+    opacity: 0;
+  }
+}
+
+/* Old Rage Pulse Logic (Simpler backup) */
+/*
+.rage-mode {
+  animation: rage-pulse calc(1s - (var(--rage-intensity) * 0.8s)) infinite alternate;
+} 
+*/
+
+.rage-mode .game-area.active {
+  animation: shake calc(0.5s - (var(--rage-intensity) * 0.4s)) infinite;
+}
+
+@keyframes shake {
+  0% {
+    transform: translate(1px, 1px) rotate(0deg);
+  }
+
+  10% {
+    transform: translate(-1px, -2px) rotate(-1deg);
+  }
+
+  20% {
+    transform: translate(-3px, 0px) rotate(1deg);
+  }
+
+  30% {
+    transform: translate(3px, 2px) rotate(0deg);
+  }
+
+  40% {
+    transform: translate(1px, -1px) rotate(1deg);
+  }
+
+  50% {
+    transform: translate(-1px, 2px) rotate(-1deg);
+  }
+
+  60% {
+    transform: translate(-3px, 1px) rotate(0deg);
+  }
+
+  70% {
+    transform: translate(3px, 1px) rotate(-1deg);
+  }
+
+  80% {
+    transform: translate(-1px, -1px) rotate(1deg);
+  }
+
+  90% {
+    transform: translate(1px, 2px) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(1px, -2px) rotate(-1deg);
+  }
 }
 
 /* Container */
@@ -44,7 +518,8 @@ body {
   justify-content: space-between;
   align-items: center;
   z-index: 100;
-  pointer-events: none; /* Let clicks pass through */
+  pointer-events: none;
+  /* Let clicks pass through */
 }
 
 .badge {
@@ -73,6 +548,7 @@ body {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -86,10 +562,12 @@ h1 {
   letter-spacing: 2px;
   text-shadow: 2px 2px 0px #000;
 }
+
 h2 {
   font-size: 2rem;
   margin-bottom: 10px;
 }
+
 .text-mute {
   opacity: 0.8;
   font-size: 0.9rem;
@@ -109,6 +587,7 @@ input {
   outline: none;
   transition: all 0.2s;
 }
+
 input:focus {
   border-color: #ffd700;
   background: rgba(255, 255, 255, 0.2);
@@ -127,6 +606,7 @@ input:focus {
   transition: transform 0.1s;
   width: 100%;
 }
+
 .primary-btn:active {
   transform: translateY(4px);
   box-shadow: none;
@@ -138,6 +618,46 @@ input:focus {
   width: 100%;
 }
 
+.settings-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+}
+
+.settings-group label {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.settings-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: bold;
+}
+
+.settings-btn.active {
+  background: white;
+  color: #333;
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.settings-btn.rage.active {
+  background: #ff4757;
+  color: white;
+  box-shadow: 0 0 15px #ff4757;
+}
+
 /* Game Elements */
 .game-area {
   width: 100%;
@@ -146,7 +666,8 @@ input:focus {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  cursor: pointer; /* Indication that it's clickable */
+  cursor: pointer;
+  /* Indication that it's clickable */
 }
 
 .card {
@@ -163,10 +684,12 @@ input:focus {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   animation: pop 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
 }
+
 @keyframes pop {
   from {
     transform: scale(0.5);
   }
+
   to {
     transform: scale(1);
   }
@@ -176,6 +699,7 @@ input:focus {
   font-size: 80px;
   margin-bottom: 10px;
 }
+
 .card-text {
   font-size: 32px;
   font-weight: 800;
@@ -192,6 +716,7 @@ input:focus {
   border-radius: 5px;
   overflow: hidden;
 }
+
 .timer-fill {
   height: 100%;
   background: #ffd700;
@@ -205,6 +730,7 @@ input:focus {
   flex-direction: column;
   gap: 8px;
 }
+
 .player-item {
   background: rgba(255, 255, 255, 0.15);
   padding: 10px;
@@ -220,11 +746,13 @@ input:focus {
   animation: fadeOut 0.5s forwards;
   pointer-events: none;
 }
+
 @keyframes fadeOut {
   from {
     opacity: 1;
     transform: scale(1);
   }
+
   to {
     opacity: 0;
     transform: scale(1.5);
@@ -253,7 +781,7 @@ input:focus {
 /* Leaderboard */
 .leaderboard-card {
   position: absolute;
-  top: 10px;
+  top: 100px;
   right: 10px;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(5px);
@@ -264,18 +792,21 @@ input:focus {
   border: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 101;
 }
+
 .leaderboard-card h3 {
   font-size: 0.8rem;
   text-transform: uppercase;
   margin-bottom: 5px;
   opacity: 0.7;
 }
+
 .lb-item {
   display: flex;
   justify-content: space-between;
   font-size: 0.9rem;
   margin-bottom: 3px;
 }
+
 .lb-item.me {
   color: #f1c40f;
   font-weight: bold;
