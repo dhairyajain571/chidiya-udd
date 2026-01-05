@@ -259,9 +259,22 @@ io.on("connection", (socket) => {
 
   socket.on("start_game", (roomId) => {
     if (rooms[roomId]) {
-      rooms[roomId].gameState = "PLAYING";
+      rooms[roomId].gameState = "COUNTDOWN";
       io.to(roomId).emit("game_started", rooms[roomId].settings);
-      startRound(roomId);
+
+      // Start Countdown
+      let count = 3;
+      const countdownInterval = setInterval(() => {
+        if (count > 0) {
+          io.to(roomId).emit("countdown_tick", count);
+          count--;
+        } else {
+          clearInterval(countdownInterval);
+          io.to(roomId).emit("countdown_tick", "GO!");
+          rooms[roomId].gameState = "PLAYING";
+          setTimeout(() => startRound(roomId), 1000); // Start game 1s after GO
+        }
+      }, 1000);
     }
   });
 

@@ -185,6 +185,7 @@ function MainGame() {
   const [gameSettings, setGameSettings] = useState({ difficulty: 'MEDIUM', visualHints: true, gameMode: 'FUN' });
   const [rageIntensity, setRageIntensity] = useState(0); // 0 to 1 for animations
   const [roundCount, setRoundCount] = useState(0); // Track rounds for visuals
+  const [countdown, setCountdown] = useState(null);
 
   // --- Socket Listeners ---
   useEffect(() => {
@@ -214,6 +215,13 @@ function MainGame() {
       if (settings) setGameSettings(settings);
       setView('GAME');
       setRoundCount(0); // Reset visual stage
+    });
+
+    socket.on('countdown_tick', (val) => {
+      setCountdown(val);
+      if (val === 'GO!') {
+        setTimeout(() => setCountdown(null), 1000);
+      }
     });
 
     socket.on('new_round', ({ item, duration, roundCount: serverRoundCount, gameMode }) => {
@@ -471,6 +479,13 @@ function MainGame() {
 
       {/* RED FLASH OVERLAY */}
       {flashError && <div className="flash-error"></div>}
+
+      {/* COUNTDOWN OVERLAY */}
+      {countdown && (
+        <div className="countdown-overlay">
+          <div key={countdown} className="countdown-text">{countdown}</div>
+        </div>
+      )}
 
       {/* Header (Always Visible except Join) */}
       {view !== 'JOIN' && (
