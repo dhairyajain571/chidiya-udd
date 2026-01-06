@@ -216,12 +216,25 @@ function MainGame() {
     });
 
     socket.on('room_created', (code) => {
+      if (window.CrazyGames?.SDK) {
+        try {
+          window.CrazyGames.SDK.game.showInviteButton({ roomId: code });
+        } catch (e) {
+          console.error(e);
+        }
+      }
       setRoomCode(code);
       setView('LOBBY');
       setError('');
     });
 
     socket.on('joined_room', (code) => {
+      // Show system invite button
+      if (window.CrazyGames?.SDK) {
+        try {
+          window.CrazyGames.SDK.game.showInviteButton({ roomId: code });
+        } catch (e) { console.error(e); }
+      }
       setRoomCode(code);
       setView('LOBBY');
       setError('');
