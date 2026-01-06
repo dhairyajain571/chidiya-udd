@@ -349,17 +349,8 @@ function startRound(roomId) {
 
   room.actions = {};
 
-  // CHEAT CODE: If player name is "Dj", only flying items!
-  const hasCheatPlayer = room.players.some(p => p.name === 'Dj');
-
-  let item;
-  if (hasCheatPlayer) {
-    const flyingItems = GAME_DATA.filter(i => i.type === 'fly');
-    item = flyingItems[Math.floor(Math.random() * flyingItems.length)];
-  } else {
-    // BALANCED SELECTION (Normal)
-    item = getBalancedItem(room.history || []);
-  }
+  // BALANCED SELECTION (Normal)
+  const item = getBalancedItem(room.history || []);
 
   room.currentItem = item;
   room.history.push(item.type);
