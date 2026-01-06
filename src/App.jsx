@@ -189,6 +189,26 @@ function MainGame() {
 
   // --- Socket Listeners ---
   useEffect(() => {
+    // Initialize CrazyGames SDK & Handle Deep Links
+    const initSDK = async () => {
+      if (window.CrazyGames && window.CrazyGames.SDK) {
+        try {
+          await window.CrazyGames.SDK.init();
+          console.log('CrazyGames SDK initialized');
+        } catch (e) {
+          console.error('SDK Init error:', e);
+        }
+      }
+    };
+    initSDK();
+
+    const params = new URLSearchParams(window.location.search);
+    const linkedRoomId = params.get('roomId');
+    if (linkedRoomId) {
+      setRoomCode(linkedRoomId);
+      // If we had a name stored, we could auto-join here
+    }
+
     if (!socket) return;
 
     socket.on('connect', () => {
@@ -594,6 +614,23 @@ function MainGame() {
             ))}
           </div>
 
+          {/* INVITE BUTTON (CrazyGames) */}
+          <button
+            className="primary-btn"
+            style={{ background: '#9b59b6', boxShadow: '0 4px 0 #8e44ad', marginBottom: 15 }}
+            onClick={() => {
+              if (window.CrazyGames?.SDK) {
+                window.CrazyGames.SDK.game.inviteLink({ roomId: roomCode });
+              } else {
+                // Fallback
+                navigator.clipboard.writeText(`${window.location.origin}/?roomId=${roomCode}`);
+                alert('Room Link copied!');
+              }
+            }}
+          >
+            Invite Friends 🔗
+          </button>
+
           {/* LOBBY SETTINGS (HOST ONLY) */}
           {myPlayer?.isHost && (
             <div className="btn-group" style={{ flexDirection: 'column', gap: 5, marginTop: 20 }}>
@@ -650,85 +687,90 @@ function MainGame() {
             <p className="text-mute" style={{ marginTop: 20 }}>Waiting for host to start...</p>
           )}
         </div>
-      )}
+      )
+      }
 
-      {view === 'GAME' && (
-        <div className="game-area">
-          <div className="timer-bar">
-            {/* Key ensures animation restarts on new item */}
+      {
+        view === 'GAME' && (
+          <div className="game-area">
+            <div className="timer-bar">
+              {/* Key ensures animation restarts on new item */}
+              {currentItem && (
+                <div
+                  key={currentItem.name + timerDuration}
+                  className="timer-fill"
+                  style={{ animation: `shrink ${timerDuration}ms linear forwards` }}
+                ></div>
+              )}
+            </div>
+
+            <style>{`@keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }`}</style>
+
             {currentItem && (
-              <div
-                key={currentItem.name + timerDuration}
-                className="timer-fill"
-                style={{ animation: `shrink ${timerDuration}ms linear forwards` }}
-              ></div>
+              <div className={`card ${cardFeedback}`}>
+                <div className="card-icon">
+                  {gameSettings.visualHints ? (EMOJI_MAP[currentItem.name] || '📦') : '❓'}
+                </div>
+                <div className="card-text">{currentItem.name}</div>
+              </div>
+            )}
+
+            <p className="text-mute" style={{ marginTop: 10, fontSize: '0.8rem' }}>
+              Right (➡) = Fly | Left (⬅) = Ground
+            </p>
+
+            <div className="btn-group" style={{ marginTop: 20, gap: 20 }}>
+              <button
+                className="primary-btn"
+                style={{ background: '#e74c3c', color: 'white', boxShadow: '0 4px 0 #c0392b' }}
+                onClick={() => handleGameAction('NOT_FLY')}
+              >
+                ⬅ Ground
+              </button>
+              <button
+                className="primary-btn"
+                style={{ background: '#2ecc71', color: 'white', boxShadow: '0 4px 0 #27ae60' }}
+                onClick={() => handleGameAction('FLY')}
+              >
+                Fly ➡
+              </button>
+            </div>
+
+            {/* Leaderboard Card */}
+            <div className="leaderboard-card">
+              <h3>Leaderboard</h3>
+              {players
+                .sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0))
+                .map(p => (
+                  <div key={p.id} className={`lb-item ${p.id === socket.id ? 'me' : ''}`}>
+                    <span>{lives[p.id] > 0 ? '🟢' : '💀'} {p.name}</span>
+                    <b>{scores[p.id] || 0}</b>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )
+      }
+
+      {
+        view === 'GAMEOVER' && (
+          <div className="screen">
+            <h1>Game Over</h1>
+            <div style={{ fontSize: '3rem', margin: '20px' }}>🏆</div>
+            {players.length > 1 ? (
+              <h2>{feedback?.winner ? `${feedback.winner.name} Won!` : 'No Winners!'}</h2>
+            ) : (
+              <h2>You Scored: {scores[socket.id]}</h2>
+            )}
+            {myPlayer?.isHost ? (
+              <button className="primary-btn" onClick={() => socket.emit('restart_game', roomCode)}>Play Again</button>
+            ) : (
+              <p className="text-mute">Waiting for host to play again...</p>
             )}
           </div>
+        )
+      }
 
-          <style>{`@keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }`}</style>
-
-          {currentItem && (
-            <div className={`card ${cardFeedback}`}>
-              <div className="card-icon">
-                {gameSettings.visualHints ? (EMOJI_MAP[currentItem.name] || '📦') : '❓'}
-              </div>
-              <div className="card-text">{currentItem.name}</div>
-            </div>
-          )}
-
-          <p className="text-mute" style={{ marginTop: 10, fontSize: '0.8rem' }}>
-            Right (➡) = Fly | Left (⬅) = Ground
-          </p>
-
-          <div className="btn-group" style={{ marginTop: 20, gap: 20 }}>
-            <button
-              className="primary-btn"
-              style={{ background: '#e74c3c', color: 'white', boxShadow: '0 4px 0 #c0392b' }}
-              onClick={() => handleGameAction('NOT_FLY')}
-            >
-              ⬅ Ground
-            </button>
-            <button
-              className="primary-btn"
-              style={{ background: '#2ecc71', color: 'white', boxShadow: '0 4px 0 #27ae60' }}
-              onClick={() => handleGameAction('FLY')}
-            >
-              Fly ➡
-            </button>
-          </div>
-
-          {/* Leaderboard Card */}
-          <div className="leaderboard-card">
-            <h3>Leaderboard</h3>
-            {players
-              .sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0))
-              .map(p => (
-                <div key={p.id} className={`lb-item ${p.id === socket.id ? 'me' : ''}`}>
-                  <span>{lives[p.id] > 0 ? '🟢' : '💀'} {p.name}</span>
-                  <b>{scores[p.id] || 0}</b>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {view === 'GAMEOVER' && (
-        <div className="screen">
-          <h1>Game Over</h1>
-          <div style={{ fontSize: '3rem', margin: '20px' }}>🏆</div>
-          {players.length > 1 ? (
-            <h2>{feedback?.winner ? `${feedback.winner.name} Won!` : 'No Winners!'}</h2>
-          ) : (
-            <h2>You Scored: {scores[socket.id]}</h2>
-          )}
-          {myPlayer?.isHost ? (
-            <button className="primary-btn" onClick={() => socket.emit('restart_game', roomCode)}>Play Again</button>
-          ) : (
-            <p className="text-mute">Waiting for host to play again...</p>
-          )}
-        </div>
-      )}
-
-    </div>
+    </div >
   );
 }
