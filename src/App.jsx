@@ -245,12 +245,21 @@ function MainGame() {
     });
 
     socket.on('game_started', (settings) => {
+      if (window.CrazyGames?.SDK) {
+        try {
+          window.CrazyGames.SDK.game.hideInviteButton();
+          window.CrazyGames.SDK.game.gameplayStart();
+        } catch (e) { }
+      }
       if (settings) setGameSettings(settings);
       setView('GAME');
       setRoundCount(0); // Reset visual stage
     });
 
     socket.on('game_reset', () => {
+      if (window.CrazyGames?.SDK) {
+        try { window.CrazyGames.SDK.game.gameplayStop(); } catch (e) { }
+      }
       setView('LOBBY');
       setRoundCount(0);
       setScores({});
@@ -314,6 +323,9 @@ function MainGame() {
     });
 
     socket.on('game_over', ({ winner }) => {
+      if (window.CrazyGames?.SDK) {
+        try { window.CrazyGames.SDK.game.gameplayStop(); } catch (e) { }
+      }
       setView('GAMEOVER');
       setFeedback({ winner });
     });
