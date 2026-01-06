@@ -191,23 +191,31 @@ function MainGame() {
   useEffect(() => {
     // Initialize CrazyGames SDK & Handle Deep Links
     const initSDK = async () => {
+      let foundRoomId = null;
+
+      // 1. Try CrazyGames SDK
       if (window.CrazyGames && window.CrazyGames.SDK) {
         try {
           await window.CrazyGames.SDK.init();
           console.log('CrazyGames SDK initialized');
+          foundRoomId = await window.CrazyGames.SDK.game.getInviteParam("roomId");
         } catch (e) {
           console.error('SDK Init error:', e);
         }
       }
+
+      // 2. Fallback to URL Query Params
+      if (!foundRoomId) {
+        const params = new URLSearchParams(window.location.search);
+        foundRoomId = params.get('roomId');
+      }
+
+      // 3. Set State
+      if (foundRoomId) {
+        setRoomCode(foundRoomId);
+      }
     };
     initSDK();
-
-    const params = new URLSearchParams(window.location.search);
-    const linkedRoomId = params.get('roomId');
-    if (linkedRoomId) {
-      setRoomCode(linkedRoomId);
-      // If we had a name stored, we could auto-join here
-    }
 
     if (!socket) return;
 
@@ -257,8 +265,12 @@ function MainGame() {
     });
 
     socket.on('game_reset', () => {
+      // Re-enable invite button for the lobby
       if (window.CrazyGames?.SDK) {
-        try { window.CrazyGames.SDK.game.gameplayStop(); } catch (e) { }
+        try {
+          window.CrazyGames.SDK.game.gameplayStop();
+          window.CrazyGames.SDK.game.showInviteButton({ roomId: roomCode });
+        } catch (e) { }
       }
       setView('LOBBY');
       setRoundCount(0);
@@ -344,12 +356,17 @@ function MainGame() {
       socket.off('joined_room');
       socket.off('update_players');
       socket.off('game_started');
+      socket.off('game_reset');
+      socket.off('settings_updated');
+      socket.off('countdown_tick');
       socket.off('new_round');
       socket.off('round_result');
+      socket.off('player_eliminated');
       socket.off('game_over');
       socket.off('error');
+      socket.off('room_expired');
     };
-  }, [socket]);
+  }, [socket, view, roomCode]); // Added view/roomCode dep for invite button logic safety
 
 
   // --- Sound Synth ---
@@ -639,13 +656,17 @@ function MainGame() {
             ))}
           </div>
 
-          {/* INVITE BUTTON (CrazyGames) */}
+          {/* INVITE BUTTON (CrazyGames Link) */}
           <button
             className="primary-btn"
             style={{ background: '#9b59b6', boxShadow: '0 4px 0 #8e44ad', marginBottom: 15 }}
-            onClick={() => {
+            onClick={async () => {
               if (window.CrazyGames?.SDK) {
-                window.CrazyGames.SDK.game.inviteLink({ roomId: roomCode });
+                try {
+                  const link = await window.CrazyGames.SDK.game.inviteLink({ roomId: roomCode });
+                  navigator.clipboard.writeText(link);
+                  alert('Invite Link Copied! Send it to your friends.');
+                } catch (e) { console.error("Invite link error", e); }
               } else {
                 // Fallback
                 navigator.clipboard.writeText(`${window.location.origin}/?roomId=${roomCode}`);
@@ -653,7 +674,7 @@ function MainGame() {
               }
             }}
           >
-            Invite Friends 🔗
+            Copy Invite Link 🔗
           </button>
 
           {/* LOBBY SETTINGS (HOST ONLY) */}
